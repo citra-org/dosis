@@ -1,3 +1,9 @@
-curl http://localhost:3000/cs/<stream>
-curl -X POST -d '{"<header>": "<body>","<header>": "<body>"}' -H "Content-Type: application/json" http://localhost:3000/w/<stream>
-curl http://localhost:3000/r/<stream>
+curl http://localhost:3000/cs/hehe
+curl http://localhost:3000/r/hehe
+curl -X POST http://localhost:3000/w/hehe \
+     -H "Content-Type: application/json" \
+     -d '[
+           { "header": "header1", "body": "body1" },
+           { "header": "header2", "body": "body2" },
+           { "header": "header3", "body": "body3" }
+         ]'

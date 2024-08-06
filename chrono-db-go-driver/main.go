@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"strings"
 	"net/http"
 
 	"github.com/citra-org/chrono-db-go-driver/client"
@@ -21,7 +22,7 @@ func main() {
 		return
 	}
 
-	uri := fmt.Sprintf("chrono://%s:%s@127.0.0.1:3141/dev4", admin, password)
+	uri := fmt.Sprintf("chrono://%s:%s@127.0.0.1:3141/test1", admin, password)
 	var err error
 
 	dbClient, dbName, err = client.Connect(uri)
@@ -32,11 +33,9 @@ func main() {
 	defer dbClient.Close()
 
 	r := gin.Default()
-	// r.GET("/c", handleCreate)
 	r.POST("/w/:stream", handleWrite)
 	r.GET("/r/:stream", handleRead)
 	r.GET("/cs/:stream", handleCreateStream)
-	r.GET("/ds/:stream", handleDeleteStream)
 
 	fmt.Println("Server listening on port 3000")
 	err = r.Run(":3000")
@@ -44,15 +43,6 @@ func main() {
 		fmt.Println("Error starting server:", err)
 	}
 }
-
-// func handleCreate(c *gin.Context) {
-// 	err := dbClient.CreateChrono(dbName)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error creating record: %s", err)})
-// 		return
-// 	}
-// 	c.String(http.StatusOK, "Create operation successful")
-// }
 
 func handleCreateStream(c *gin.Context) {
 	stream := c.Param("stream")
@@ -64,32 +54,35 @@ func handleCreateStream(c *gin.Context) {
 	c.String(http.StatusOK, "Create operation successful")
 }
 
-func handleDeleteStream(c *gin.Context) {
-	stream := c.Param("stream")
-	err := dbClient.DeleteStream(dbName, stream)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error deleting record: %s", err)})
-		return
-	}
-	c.String(http.StatusOK, "Delete operation successful")
+
+type Event struct {
+	Header string `json:"header"`
+	Body   string `json:"body"`
 }
 
 func handleWrite(c *gin.Context) {
 	stream := c.Param("stream")
 
-	var data map[string]string
-	if err := c.ShouldBindJSON(&data); err != nil {
+	var events []Event
+	if err := c.ShouldBindJSON(&events); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Error decoding request body: %s", err)})
 		return
 	}
 
-	err := dbClient.WriteEvent(dbName, stream, data)
+	var eventStrings []string
+	for _, event := range events {
+		eventStrings = append(eventStrings, fmt.Sprintf(`("%s", "%s")`, event.Header, event.Body))
+	}
+	formattedData := fmt.Sprintf("{%s}", strings.Join(eventStrings, ", "))
+
+	err := dbClient.WriteEvent(dbName, stream, formattedData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error writing data: %s", err)})
 		return
 	}
 	c.String(http.StatusOK, "Write operation successful")
 }
+
 
 func handleRead(c *gin.Context) {
 	stream := c.Param("stream")
