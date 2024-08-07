@@ -21,7 +21,7 @@ func main() {
 		return
 	}
 
-	uri := fmt.Sprintf("chrono://%s:%s@127.0.0.1:3000/test1", admin, password)
+	uri := fmt.Sprintf("chrono://%s:%s@127.0.0.1:3141/test1", admin, password)
 	var err error
 	dbClient, dbName, err = client.Connect(uri)
 	if err != nil {

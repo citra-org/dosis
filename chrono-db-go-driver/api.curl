@@ -1,6 +1,6 @@
 curl http://localhost:3000/cs/hehe
-curl http://localhost:3000/r/hehe
-curl -X POST http://localhost:3000/w/hehe \
+curl http://localhost:3000/r/stream1
+curl -X POST http://localhost:3000/w/stream1 \
      -H "Content-Type: application/json" \
      -d '[
            { "header": "header1", "body": "body1" },
