@@ -6,4 +6,4 @@ curl -X POST http://localhost:3000/w/stream1 \
            { "header": "header1", "body": "body1" },
            { "header": "header2", "body": "body2" },
            { "header": "header3", "body": "body3" }
-         ]'
+         ]'r
