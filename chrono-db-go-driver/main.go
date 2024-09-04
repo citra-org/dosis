@@ -1,8 +1,9 @@
 package main
 
 import (
-	"os"
+	// "os"
 	"fmt"
+	"time"
 	// "strings"
 	"net/http"
 
@@ -12,30 +13,82 @@ import (
 
 var dbClient *client.Client
 var dbName string
+var err error
+
+func connectToDatabase(uri string) error {
+	dbClient, dbName, err = client.Connect(uri)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ensureConnection(uri string) error {
+	err := dbClient.PingChrono()
+	if err != nil {
+		fmt.Println("Connection lost. Attempting to reconnect...")
+		for {
+			err := connectToDatabase(uri)
+			if err != nil {
+				fmt.Println("Reconnection failed:", err)
+				fmt.Println("Retrying in 5 seconds...")
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			fmt.Println("Reconnected to the database.")
+			break
+		}
+	}
+	return nil
+}
 
 func main() {
-	admin := os.Getenv("ADMIN_USER")
-	password := os.Getenv("ADMIN_PASSWORD")
-
+	admin := "admin"
+	password := "X%CQXZpqWOmomvIp"
 	if admin == "" || password == "" {
 		fmt.Println("Environment variables ADMIN_USER and ADMIN_PASSWORD must be set")
 		return
 	}
 
 	uri := fmt.Sprintf("chrono://%s:%s@127.0.0.1:3141/test1", admin, password)
-	var err error
 
-	dbClient, dbName, err = client.Connect(uri)
-	if err != nil {
-		fmt.Println("Error connecting to database:", err)
-		return
+	for {
+		err := connectToDatabase(uri)
+		if err != nil {
+			fmt.Println("Error connecting to database:", err)
+			fmt.Println("Retrying in 5 seconds...")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		break
 	}
 	defer dbClient.Close()
 
 	r := gin.Default()
-	r.GET("/w", handleWrite)
-	r.GET("/r/:stream", handleRead)
-	r.GET("/cs/:stream", handleCreateStream)
+
+	r.GET("/w", func(c *gin.Context) {
+		if err := ensureConnection(uri); err != nil {
+			c.JSON(500, gin.H{"error": "Database connection failed"})
+			return
+		}
+		handleWrite(c)
+	})
+
+	r.GET("/r/:stream", func(c *gin.Context) {
+		if err := ensureConnection(uri); err != nil {
+			c.JSON(500, gin.H{"error": "Database connection failed"})
+			return
+		}
+		handleRead(c)
+	})
+
+	r.GET("/cs/:stream", func(c *gin.Context) {
+		if err := ensureConnection(uri); err != nil {
+			c.JSON(500, gin.H{"error": "Database connection failed"})
+			return
+		}
+		handleCreateStream(c)
+	})
 
 	fmt.Println("Server listening on port 3000")
 	err = r.Run(":3000")
