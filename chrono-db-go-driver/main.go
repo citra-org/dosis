@@ -1,11 +1,9 @@
 package main
 
 import (
-	// "os"
 	"fmt"
-	"time"
-	// "strings"
 	"net/http"
+	"time"
 
 	"github.com/citra-org/chrono-db-go-driver/client"
 	"github.com/gin-gonic/gin"
@@ -66,7 +64,7 @@ func main() {
 
 	r := gin.Default()
 
-	r.GET("/w", func(c *gin.Context) {
+	r.POST("/w/:stream", func(c *gin.Context) {
 		if err := ensureConnection(uri); err != nil {
 			c.JSON(500, gin.H{"error": "Database connection failed"})
 			return
@@ -107,35 +105,22 @@ func handleCreateStream(c *gin.Context) {
 	c.String(http.StatusOK, "Create operation successful")
 }
 
-
-type Event struct {
-	Header string `json:"header"`
-	Body   string `json:"body"`
-}
-
 func handleWrite(c *gin.Context) {
-	// stream := c.Param("stream")
+	stream := c.Param("stream")
 
-	// var events []Event
-	// if err := c.ShouldBindJSON(&events); err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Error decoding request body: %s", err)})
-	// 	return
-	// }
+	var event string
+	if err := c.BindJSON(&event); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
 
-	// var eventStrings []string
-	// for _, event := range events {
-	// 	eventStrings = append(eventStrings, fmt.Sprintf(`("%s", "%s")`, event.Header, event.Body))
-	// }
-	// formattedData := fmt.Sprintf("{%s}", strings.Join(eventStrings, ", "))
-	command := `INSERT INTO stream1 VALUES ('header1', 'body1'), ('header2', 'body2'), ('header3', 'body3')`
-	err := dbClient.WriteEvent(command)
+	err := dbClient.WriteEvent(stream, event)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error writing data: %s", err)})
 		return
 	}
 	c.String(http.StatusOK, "Write operation successful")
 }
-
 
 func handleRead(c *gin.Context) {
 	stream := c.Param("stream")

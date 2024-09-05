@@ -1,9 +1,10 @@
-curl http://localhost:3000/cs/hehe
-curl http://localhost:3000/r/stream1
-curl -X POST http://localhost:3000/w/stream1 \
-     -H "Content-Type: application/json" \
-     -d '[
-           { "header": "header1", "body": "body1" },
-           { "header": "header2", "body": "body2" },
-           { "header": "header3", "body": "body3" }
-         ]'r
+1725457582677 header3 body3
+1725458298661 header1 body1
+1725458298662 header3 body3
+1725458298663 header2 body2
+1725458397838 header1 body1
+1725458397838 header2 body2
+1725458397839 header3 body3
+1725459206103 header1 body1
+1725459206103 header2 body2
+1725459206103 header3 body3
